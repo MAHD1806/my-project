@@ -1,12 +1,22 @@
 services:
   web:
-    image: nginx:alpine
+    image: node:22
+    working_dir: /app
     restart: on-failure
-    ports: ["3000:80"]
+    command: ["sh", "-ec", "npm install --no-audit --no-fund && exec npm run dev"]
+    ports: ["3000:3000"]
+    environment:
+      - __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+      - CHOKIDAR_USEPOLLING=true
     volumes:
-      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./:/app
+      - node_modules:/app/node_modules
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      test: ["CMD-SHELL", "curl -fsS -m 3 http://localhost:3000/ >/dev/null || (echo 'vite dev server not responding'; exit 1)"]
       interval: 10s
-      timeout: 3s
-      retries: 3
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+
+volumes:
+  node_modules:
